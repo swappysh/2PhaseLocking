@@ -2,13 +2,15 @@
 * @Author: doody
 * @Date:   2016-04-17 14:04:33
 * @Last Modified by:   swapsharma
-* @Last Modified time: 2016-04-17 17:17:38
+* @Last Modified time: 2016-04-17 22:10:25
 * @Aim: To design and implement Two phase locking algo
 * @Bugs:
-* 	Only Write and Read as permissible value
-* 	Abort is the only deadlock resolution method
-* 	Nonrecommended random function added
-* 	Input method is not perfect
+* -	Only Write and Read as permissible value
+* -	Abort is the only deadlock resolution method
+* -	Nonrecommended random function added
+* -	Input method is not perfect
+* -	Need to create insertion fnc for schedule table
+* 	insertion
 */
 
 #include <iostream>
@@ -16,6 +18,7 @@
 
 #include <ctime>
 #include <cstdlib>
+#include <unistd.h>
 
 // Definition for Read op and write op
 #define	W	1
@@ -34,7 +37,7 @@ struct _resourceTable
 {
 	char		var;
 	bool		op;
-	vector<int>	trnxIndex;
+	vector<int>	trnxIndexVector;
 };
 
 struct _schedule
@@ -52,7 +55,7 @@ bool system(int transNum)
 	static vector<_resourceTable>	resourceTable;
 	static vector<_schedule>		schedule;
 
-	_instr* tempInstr = transList[transNum].begin();
+	vector<_instr>::iterator tempInstr = transList[transNum].begin();
 
 	// ResourceTableIndex variable
 	int RTIndex = 0;
@@ -65,21 +68,66 @@ bool system(int transNum)
 		_resourceTable tempRRow;
 		tempRRow.var = tempInstr->var;
 		tempRRow.op = tempInstr->op;
-		tempRRow.trnxIndex(transNum);
+		tempRRow.trnxIndexVector.push_back(transNum);
 
 		resourceTable.push_back(tempRRow);
 
+		// Pass the schedule to schedule table
 		_schedule tempSRow;
 		tempSRow.trnxIndex = transNum;
 		tempSRow.var = tempInstr->var;
 		tempSRow.op = tempInstr->op;
 
 		schedule.push_back(tempSRow);
+
+		return 0;
 	}
 	else // If it does exist
 	{
+		// Check whether the operation associated is W or R
+		if (resourceTable[RTIndex].op == R)	// If it is R
+		{
+			if (tempInstr->op == R)	// If the selected instr has R as op
+			{
+				// Then pass the permission to use resource
+				resourceTable[RTIndex].trnxIndexVector.push_back(transNum);
 
+				// Pass the schedule to schedule table
+				_schedule tempSRow;
+				tempSRow.trnxIndex = transNum;
+				tempSRow.var = tempInstr->var;
+				tempSRow.op = tempInstr->op;
+
+				schedule.push_back(tempSRow);
+
+				return 0;
+			}
+			else	// If it has W as instr
+			{
+				// Check if reader is one and of same
+				// transaction, then update
+				if (resourceTable[RTIndex].trnxIndexVector.size() == 1 \
+					and resourceTable[RTIndex].trnxIndexVector.front() == transNum)
+				{
+					resourceTable[RTIndex].op = W;
+
+					// Push instr in schedule
+					_schedule tempSRow;
+					tempSRow.trnxIndex = transNum;
+					tempSRow.var = tempInstr->var;
+					tempSRow.op = tempInstr->op;
+
+					schedule.push_back(tempSRow);
+				}
+				else
+					return -1;
+			}
+		}
+		else	// If op is W
+			return -1;
 	}
+
+	return -1;
 }
 
 int main()
@@ -141,7 +189,7 @@ int main()
 			if (system(randTransIndex) == -1)
 			{
 				cout << "Abort\n";
-				transList.erase(transList.begin()+randTransIndex)
+				transList.erase(transList.begin()+randTransIndex);
 			}
 		}
 		else
