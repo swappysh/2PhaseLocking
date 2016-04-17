@@ -2,7 +2,7 @@
 * @Author: doody
 * @Date:   2016-04-17 14:04:33
 * @Last Modified by:   swapsharma
-* @Last Modified time: 2016-04-17 22:10:25
+* @Last Modified time: 2016-04-17 23:18:59
 * @Aim: To design and implement Two phase locking algo
 * @Bugs:
 * -	Only Write and Read as permissible value
@@ -11,6 +11,8 @@
 * -	Input method is not perfect
 * -	Need to create insertion fnc for schedule table
 * 	insertion
+* -	schedule was declared outside the function
+* -	Prints new index after older transaction is removed
 */
 
 #include <iostream>
@@ -23,6 +25,9 @@
 // Definition for Read op and write op
 #define	W	1
 #define	R	0
+
+// Function to debug
+#define	debug(i)	{cout << "Error :" << i << '\n';}
 
 using namespace std;
 
@@ -49,11 +54,11 @@ struct _schedule
 
 // Vector of vector to store multiple transactions
 vector<vector<_instr> > transList;
+vector<_schedule>		schedule;
 
 bool system(int transNum)
 {
 	static vector<_resourceTable>	resourceTable;
-	static vector<_schedule>		schedule;
 
 	vector<_instr>::iterator tempInstr = transList[transNum].begin();
 
@@ -63,7 +68,7 @@ bool system(int transNum)
 	for (RTIndex = 0; RTIndex < resourceTable.size() and tempInstr->var != resourceTable[RTIndex].var; ++RTIndex);
 
 	// If it doesn't exists
-	if (RTIndex != resourceTable.size())
+	if (RTIndex == resourceTable.size())
 	{
 		_resourceTable tempRRow;
 		tempRRow.var = tempInstr->var;
@@ -124,7 +129,24 @@ bool system(int transNum)
 			}
 		}
 		else	// If op is W
-			return -1;
+		{
+			// If selected instr has op W and is of
+			// same transaction
+			if (resourceTable[RTIndex].trnxIndexVector.front() == transNum)
+			{
+				resourceTable[RTIndex].op = W;
+
+				// Push instr in schedule
+				_schedule tempSRow;
+				tempSRow.trnxIndex = transNum;
+				tempSRow.var = tempInstr->var;
+				tempSRow.op = tempInstr->op;
+
+				schedule.push_back(tempSRow);
+			}
+			else
+				return -1;
+		}
 	}
 
 	return -1;
@@ -177,14 +199,13 @@ int main()
 		// provides with random number fro 0 to RAND_MAX
 		int randTransIndex = transList.size()*rand()/RAND_MAX;
 	
-		cout << (transList.size()*rand())/RAND_MAX << '\n';
-	
 		// Send transList index to function to take the first
 		// instruction from transaction. If error occurs
 		// sleep for some time and then retry. If problem still
 		// persists then abort.
 		if (system(randTransIndex) == -1)
 		{
+			debug(2);
 			sleep(10);
 			if (system(randTransIndex) == -1)
 			{
@@ -193,7 +214,20 @@ int main()
 			}
 		}
 		else
-			continue;
+		{
+			// Remove instr or remove transaction if no more instr
+			if (transList[randTransIndex].size() > 1)
+				transList[randTransIndex].erase(transList[randTransIndex].begin());
+			else
+				transList.erase(transList.begin()+randTransIndex);
+		}
+		continue;
+	}
+
+	// Print schedule if completed
+	for (vector<_schedule>::iterator i = schedule.begin(); i != schedule.end(); ++i)
+	{
+		cout << i->trnxIndex << " " << i->var << " " << i->op << '\n';
 	}
 	
 	return 0;
