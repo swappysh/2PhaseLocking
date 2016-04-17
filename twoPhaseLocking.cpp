@@ -2,7 +2,7 @@
 * @Author: doody
 * @Date:   2016-04-17 14:04:33
 * @Last Modified by:   swapsharma
-* @Last Modified time: 2016-04-17 16:02:23
+* @Last Modified time: 2016-04-17 16:17:34
 * @Aim: To design and implement Two phase locking algo
 * @Bugs:
 * 	Only Write and Read as permissible value
@@ -30,11 +30,13 @@ struct instr
 	char var;
 };
 
+// Vector of vector to store multiple transactions
+vector<vector<instr> > transList;
+
+bool system(int transNum);
+
 int main()
 {
-	// Vector of vector to store multiple transactions
-	vector<vector<instr> > transList;
-
 	// Loop for input from user
 	char ch;
 	while(!cin.eof())
@@ -78,6 +80,9 @@ int main()
 	int randTransIndex = transList.size()*rand()/RAND_MAX;
 
 	cout << (transList.size()*rand())/RAND_MAX << '\n';
+
+	// Send transList index to function to take the first
+	// instruction from transaction
 
 	return 0;
 }
