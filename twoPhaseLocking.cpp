@@ -61,6 +61,16 @@ struct _schedule
 vector<vector<_instr> > transList;
 vector<_schedule>		schedule;
 
+// Function that will insert the instruction that 
+// has been executed in the schedule vector
+void InsertInSchedule(int transNum, _instr tempInstr){
+	_schedule tempSRow;
+	tempSRow.trnxIndex = transNum;
+	tempSRow.var = tempInstr.var;
+	tempSRow.op = tempInstr.op;
+
+	schedule.push_back(tempSRow);
+}
 bool system(int transNum)
 {
 	static vector<_resourceTable>	resourceTable;
@@ -83,12 +93,7 @@ bool system(int transNum)
 		resourceTable.push_back(tempRRow);
 
 		// Pass the schedule to schedule table
-		_schedule tempSRow;
-		tempSRow.trnxIndex = transNum;
-		tempSRow.var = tempInstr.var;
-		tempSRow.op = tempInstr.op;
-
-		schedule.push_back(tempSRow);
+		InsertInSchedule(transNum, tempInstr);
 
 		return SUCCESS;
 	}
@@ -103,12 +108,7 @@ bool system(int transNum)
 				resourceTable[RTIndex].trnxIndexVector.push_back(transNum);
 
 				// Pass the schedule to schedule table
-				_schedule tempSRow;
-				tempSRow.trnxIndex = transNum;
-				tempSRow.var = tempInstr.var;
-				tempSRow.op = tempInstr.op;
-
-				schedule.push_back(tempSRow);
+				InsertInSchedule(transNum, tempInstr);
 
 				return SUCCESS;
 			}
@@ -122,12 +122,7 @@ bool system(int transNum)
 					resourceTable[RTIndex].op = W;
 
 					// Push instr in schedule
-					_schedule tempSRow;
-					tempSRow.trnxIndex = transNum;
-					tempSRow.var = tempInstr.var;
-					tempSRow.op = tempInstr.op;
-
-					schedule.push_back(tempSRow);
+					InsertInSchedule(transNum, tempInstr);
 
 					return SUCCESS;
 				}
@@ -139,17 +134,12 @@ bool system(int transNum)
 		{
 			// If selected instr has op W and is of
 			// same transaction
-			if (tempInstr->op == W and resourceTable[RTIndex].trnxIndexVector.front() == transNum)
+			if (tempInstr.op == W and resourceTable[RTIndex].trnxIndexVector.front() == transNum)
 			{
 				resourceTable[RTIndex].op = W;
 
 				// Push instr in schedule
-				_schedule tempSRow;
-				tempSRow.trnxIndex = transNum;
-				tempSRow.var = tempInstr.var;
-				tempSRow.op = tempInstr.op;
-
-				schedule.push_back(tempSRow);
+				InsertInSchedule(transNum, tempInstr);
 
 				return SUCCESS;
 			}
