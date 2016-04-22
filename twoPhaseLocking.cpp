@@ -139,7 +139,7 @@ bool system(int transNum)
 		{
 			// If selected instr has op W and is of
 			// same transaction
-			if (tempInstr->op == W and resourceTable[RTIndex].trnxIndexVector.front() == transNum)
+			if (tempInstr.op == W and resourceTable[RTIndex].trnxIndexVector.front() == transNum)
 			{
 				resourceTable[RTIndex].op = W;
 
