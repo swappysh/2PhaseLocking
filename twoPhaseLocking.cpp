@@ -114,7 +114,7 @@ bool system(int transNum)
 				// Check if reader is one and of same
 				// transaction, then update
 				if (resourceTable[RTIndex].trnxIndexVector.size() == 1 \
-					and resourceTable[RTIndex].trnxIndexVector.front() == transNum)
+					and resourceTable[RTIndex].trnxIndexVector.front() == tempInstr.trnxIndex)
 				{
 					resourceTable[RTIndex].op = W;
 
@@ -133,8 +133,6 @@ bool system(int transNum)
 			// same transaction
 			if (tempInstr.op == W and resourceTable[RTIndex].trnxIndexVector.front() == tempInstr.trnxIndex)
 			{
-				resourceTable[RTIndex].op = W;
-
 				// Push instr in schedule
 				InsertInSchedule(tempInstr);
 
