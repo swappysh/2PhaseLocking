@@ -38,6 +38,7 @@ struct _instr
 {
 	bool	op;
 	char	var;
+	int 	trnxIndex;
 };
 
 struct _resourceTable
@@ -57,12 +58,13 @@ struct _schedule
 // Vector of vector to store multiple transactions
 vector<vector<_instr> > transList;
 vector<_schedule>		schedule;
+vector<_resourceTable>	resourceTable;
 
 // Function that will insert the instruction that 
 // has been executed in the schedule vector
-void InsertInSchedule(int transNum, _instr tempInstr){
+void InsertInSchedule(_instr tempInstr){
 	_schedule tempSRow;
-	tempSRow.trnxIndex = transNum;
+	tempSRow.trnxIndex = tempInstr.trnxIndex;
 	tempSRow.var = tempInstr.var;
 	tempSRow.op = tempInstr.op;
 
@@ -70,8 +72,6 @@ void InsertInSchedule(int transNum, _instr tempInstr){
 }
 bool system(int transNum)
 {
-	static vector<_resourceTable>	resourceTable;
-
 	_instr tempInstr = transList[transNum][0];
 
 	// ResourceTableIndex variable
@@ -85,12 +85,12 @@ bool system(int transNum)
 		_resourceTable tempRRow;
 		tempRRow.var = tempInstr.var;
 		tempRRow.op = tempInstr.op;
-		tempRRow.trnxIndexVector.push_back(transNum);
+		tempRRow.trnxIndexVector.push_back(tempInstr.trnxIndex);
 
 		resourceTable.push_back(tempRRow);
 
 		// Pass the schedule to schedule table
-		InsertInSchedule(transNum, tempInstr);
+		InsertInSchedule(tempInstr);
 
 		return SUCCESS;
 	}
@@ -102,10 +102,10 @@ bool system(int transNum)
 			if (tempInstr.op == R)	// If the selected instr has R as op
 			{
 				// Then pass the permission to use resource
-				resourceTable[RTIndex].trnxIndexVector.push_back(transNum);
+				resourceTable[RTIndex].trnxIndexVector.push_back(tempInstr.trnxIndex);
 
 				// Pass the schedule to schedule table
-				InsertInSchedule(transNum, tempInstr);
+				InsertInSchedule(tempInstr);
 
 				return SUCCESS;
 			}
@@ -119,7 +119,7 @@ bool system(int transNum)
 					resourceTable[RTIndex].op = W;
 
 					// Push instr in schedule
-					InsertInSchedule(transNum, tempInstr);
+					InsertInSchedule(tempInstr);
 
 					return SUCCESS;
 				}
@@ -131,12 +131,12 @@ bool system(int transNum)
 		{
 			// If selected instr has op W and is of
 			// same transaction
-			if (tempInstr.op == W and resourceTable[RTIndex].trnxIndexVector.front() == transNum)
+			if (tempInstr.op == W and resourceTable[RTIndex].trnxIndexVector.front() == tempInstr.trnxIndex)
 			{
 				resourceTable[RTIndex].op = W;
 
 				// Push instr in schedule
-				InsertInSchedule(transNum, tempInstr);
+				InsertInSchedule(tempInstr);
 
 				return SUCCESS;
 			}
@@ -170,6 +170,9 @@ int main()
 			do {ch = cin.get();} while(ch == ' ');
 			tempInstr.var = ch;
 		
+			// Added trnx index to trnx  variable
+			tempInstr.trnxIndex = transList.size() + 1;
+
 			// Pushing the new intruction
 			transaction.push_back(tempInstr);
 
@@ -215,7 +218,16 @@ int main()
 			if (transList[randTransIndex].size() > 1)
 				transList[randTransIndex].erase(transList[randTransIndex].begin());
 			else
+			{
 				transList.erase(transList.begin()+randTransIndex);
+				for (int i = 0; i < resourceTable.size(); ++i)
+				{
+					// Check if it is a write operation and the
+					// trnx number is same then delete
+					if (resourceTable[i].op == 'W' and resourceTable[i].trnxIndexVector.front() == randTransIndex)
+						resourceTable.erase(resourceTable.begin()+i);
+				}
+			}
 		}
 		continue;
 	}
@@ -225,6 +237,16 @@ int main()
 	{
 		cout << i->trnxIndex << " " << i->var << " " << i->op << '\n';
 	}
-	
+
+	// Print resource table if completed
+	for (vector<_resourceTable>::iterator i = resourceTable.begin(); i != resourceTable.end(); ++i)
+	{
+		for (vector<int>::iterator j = i->trnxIndexVector.begin(); j != i->trnxIndexVector.end(); ++j)
+		{
+			cout << *j << " ";
+		}
+		cout << i->var << " " << i->op << '\n';
+	}
+
 	return 0;
 }
