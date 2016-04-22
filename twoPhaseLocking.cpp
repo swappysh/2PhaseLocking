@@ -65,19 +65,19 @@ bool system(int transNum)
 {
 	static vector<_resourceTable>	resourceTable;
 
-	vector<_instr>::iterator tempInstr = transList[transNum].begin();
+	_instr tempInstr = transList[transNum][0];
 
 	// ResourceTableIndex variable
 	int RTIndex = 0;
 	// Check if variable in the instr exists in resourceTable
-	for (RTIndex = 0; RTIndex < resourceTable.size() and tempInstr->var != resourceTable[RTIndex].var; ++RTIndex);
+	for (RTIndex = 0; RTIndex < resourceTable.size() and tempInstr.var != resourceTable[RTIndex].var; ++RTIndex);
 
 	// If it doesn't exists
 	if (RTIndex == resourceTable.size())
 	{
 		_resourceTable tempRRow;
-		tempRRow.var = tempInstr->var;
-		tempRRow.op = tempInstr->op;
+		tempRRow.var = tempInstr.var;
+		tempRRow.op = tempInstr.op;
 		tempRRow.trnxIndexVector.push_back(transNum);
 
 		resourceTable.push_back(tempRRow);
@@ -85,8 +85,8 @@ bool system(int transNum)
 		// Pass the schedule to schedule table
 		_schedule tempSRow;
 		tempSRow.trnxIndex = transNum;
-		tempSRow.var = tempInstr->var;
-		tempSRow.op = tempInstr->op;
+		tempSRow.var = tempInstr.var;
+		tempSRow.op = tempInstr.op;
 
 		schedule.push_back(tempSRow);
 
@@ -97,7 +97,7 @@ bool system(int transNum)
 		// Check whether the operation associated is W or R
 		if (resourceTable[RTIndex].op == R)	// If it is R
 		{
-			if (tempInstr->op == R)	// If the selected instr has R as op
+			if (tempInstr.op == R)	// If the selected instr has R as op
 			{
 				// Then pass the permission to use resource
 				resourceTable[RTIndex].trnxIndexVector.push_back(transNum);
@@ -105,8 +105,8 @@ bool system(int transNum)
 				// Pass the schedule to schedule table
 				_schedule tempSRow;
 				tempSRow.trnxIndex = transNum;
-				tempSRow.var = tempInstr->var;
-				tempSRow.op = tempInstr->op;
+				tempSRow.var = tempInstr.var;
+				tempSRow.op = tempInstr.op;
 
 				schedule.push_back(tempSRow);
 
@@ -124,8 +124,8 @@ bool system(int transNum)
 					// Push instr in schedule
 					_schedule tempSRow;
 					tempSRow.trnxIndex = transNum;
-					tempSRow.var = tempInstr->var;
-					tempSRow.op = tempInstr->op;
+					tempSRow.var = tempInstr.var;
+					tempSRow.op = tempInstr.op;
 
 					schedule.push_back(tempSRow);
 
@@ -146,8 +146,8 @@ bool system(int transNum)
 				// Push instr in schedule
 				_schedule tempSRow;
 				tempSRow.trnxIndex = transNum;
-				tempSRow.var = tempInstr->var;
-				tempSRow.op = tempInstr->op;
+				tempSRow.var = tempInstr.var;
+				tempSRow.op = tempInstr.op;
 
 				schedule.push_back(tempSRow);
 
