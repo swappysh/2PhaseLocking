@@ -13,6 +13,7 @@
 * 	insertion
 * -	schedule was declared outside the function
 * -	Prints new index after older transaction is removed
+* -	Iterator for tempInstr not needed
 */
 
 #include <iostream>
@@ -25,6 +26,10 @@
 // Definition for Read op and write op
 #define	W	1
 #define	R	0
+
+// Definition for wait-die deadlock revention protocol
+#define	SUCCESS	0
+#define	ABORT	-1
 
 // Function to debug
 #define	debug(i)	{cout << "Error :" << i << '\n';}
@@ -85,7 +90,7 @@ bool system(int transNum)
 
 		schedule.push_back(tempSRow);
 
-		return 0;
+		return SUCCESS;
 	}
 	else // If it does exist
 	{
@@ -105,7 +110,7 @@ bool system(int transNum)
 
 				schedule.push_back(tempSRow);
 
-				return 0;
+				return SUCCESS;
 			}
 			else	// If it has W as instr
 			{
@@ -123,16 +128,18 @@ bool system(int transNum)
 					tempSRow.op = tempInstr->op;
 
 					schedule.push_back(tempSRow);
+
+					return SUCCESS;
 				}
 				else
-					return -1;
+					return ABORT;
 			}
 		}
 		else	// If op is W
 		{
 			// If selected instr has op W and is of
 			// same transaction
-			if (resourceTable[RTIndex].trnxIndexVector.front() == transNum)
+			if (tempInstr->op == W and resourceTable[RTIndex].trnxIndexVector.front() == transNum)
 			{
 				resourceTable[RTIndex].op = W;
 
@@ -143,13 +150,15 @@ bool system(int transNum)
 				tempSRow.op = tempInstr->op;
 
 				schedule.push_back(tempSRow);
+
+				return SUCCESS;
 			}
 			else
-				return -1;
+				return ABORT;
 		}
 	}
 
-	return -1;
+	return ABORT;
 }
 
 int main()
@@ -203,11 +212,11 @@ int main()
 		// instruction from transaction. If error occurs
 		// sleep for some time and then retry. If problem still
 		// persists then abort.
-		if (system(randTransIndex) == -1)
+		if (system(randTransIndex) == ABORT)
 		{
 			debug(2);
 			sleep(10);
-			if (system(randTransIndex) == -1)
+			if (system(randTransIndex) == ABORT)
 			{
 				cout << "Abort\n";
 				transList.erase(transList.begin()+randTransIndex);
