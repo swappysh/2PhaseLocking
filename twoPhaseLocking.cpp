@@ -9,11 +9,8 @@
 * -	Abort is the only deadlock resolution method
 * -	Nonrecommended random function added
 * -	Input method is not perfect
-* -	Need to create insertion fnc for schedule table
-* 	insertion
 * -	schedule was declared outside the function
 * -	Prints new index after older transaction is removed
-* -	Iterator for tempInstr not needed
 */
 
 #include <iostream>
