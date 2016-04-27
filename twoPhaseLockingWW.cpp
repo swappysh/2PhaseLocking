@@ -5,18 +5,6 @@
 * @Last Modified time: 2016-04-17 23:18:59
 * @Aim: To design and implement Two phase locking algo
 * @Bugs:
-* -	Only Write and Read as permissible value
-* -	Abort is the only deadlock resolution method
-* -	Nonrecommended random function added
-* -	Input method is not perfect
-* -	Need to create insertion fnc for schedule table
-* 	insertion
-* -	schedule was declared outside the function
-* -	Prints new index after older transaction is removed
-* -	Gives priority to readers
-* -	No need for temporary Istruction iterator
-* @To Do:
-* -	Need to insert Wait-die Deadlock prevention protocol
 */
 
 #include <iostream>
@@ -31,9 +19,8 @@
 #define	R	0
 
 // Definition for wait-die deadlock revention protocol
-#define	WAIT	1
 #define	SUCCESS	0
-#define	DIE	-1
+#define	ABORT	-1
 
 // Function to debug
 #define	debug(i)	{cout << "Error :" << i << '\n';}
@@ -45,6 +32,7 @@ struct _instr
 {
 	bool	op;
 	char	var;
+	int 	trnxIndex;
 };
 
 struct _resourceTable
@@ -56,43 +44,47 @@ struct _resourceTable
 
 struct _schedule
 {
-	int	trnxIndex;
+	int		trnxIndex;
 	char	var;
 	bool	op;
 };
 
 // Vector of vector to store multiple transactions
 vector<vector<_instr> > transList;
-vector<_schedule>	schedule;
+vector<_schedule>		schedule;
+vector<_resourceTable>	resourceTable;
 
+// Function that will insert the instruction that 
+// has been executed in the schedule vector
+void InsertInSchedule(_instr tempInstr){
+	_schedule tempSRow;
+	tempSRow.trnxIndex = tempInstr.trnxIndex;
+	tempSRow.var = tempInstr.var;
+	tempSRow.op = tempInstr.op;
+
+	schedule.push_back(tempSRow);
+}
 bool system(int transNum)
 {
-	static vector<_resourceTable>	resourceTable;
-
-	vector<_instr>::iterator tempInstr = transList[transNum].begin();
+	_instr tempInstr = transList[transNum][0];
 
 	// ResourceTableIndex variable
 	int RTIndex = 0;
 	// Check if variable in the instr exists in resourceTable
-	for (RTIndex = 0; RTIndex < resourceTable.size() and tempInstr->var != resourceTable[RTIndex].var; ++RTIndex);
+	for (RTIndex = 0; RTIndex < resourceTable.size() and tempInstr.var != resourceTable[RTIndex].var; ++RTIndex);
 
 	// If it doesn't exists
 	if (RTIndex == resourceTable.size())
 	{
 		_resourceTable tempRRow;
-		tempRRow.var = tempInstr->var;
-		tempRRow.op = tempInstr->op;
-		tempRRow.trnxIndexVector.push_back(transNum);
+		tempRRow.var = tempInstr.var;
+		tempRRow.op = tempInstr.op;
+		tempRRow.trnxIndexVector.push_back(tempInstr.trnxIndex);
 
 		resourceTable.push_back(tempRRow);
 
 		// Pass the schedule to schedule table
-		_schedule tempSRow;
-		tempSRow.trnxIndex = transNum;
-		tempSRow.var = tempInstr->var;
-		tempSRow.op = tempInstr->op;
-
-		schedule.push_back(tempSRow);
+		InsertInSchedule(tempInstr);
 
 		return SUCCESS;
 	}
@@ -101,79 +93,51 @@ bool system(int transNum)
 		// Check whether the operation associated is W or R
 		if (resourceTable[RTIndex].op == R)	// If it is R
 		{
-			if (tempInstr->op == R)	// If the selected instr has R as op
+			if (tempInstr.op == R)	// If the selected instr has R as op
 			{
 				// Then pass the permission to use resource
-				resourceTable[RTIndex].trnxIndexVector.push_back(transNum);
+				resourceTable[RTIndex].trnxIndexVector.push_back(tempInstr.trnxIndex);
 
 				// Pass the schedule to schedule table
-				_schedule tempSRow;
-				tempSRow.trnxIndex = transNum;
-				tempSRow.var = tempInstr->var;
-				tempSRow.op = tempInstr->op;
-
-				schedule.push_back(tempSRow);
+				InsertInSchedule(tempInstr);
 
 				return SUCCESS;
 			}
 			else	// If it has W as instr
 			{
-				// Check if reader is one
-				if (resourceTable[RTIndex].trnxIndexVector.size() == 1)
+				// Check if reader is one and of same
+				// transaction, then update
+				if (resourceTable[RTIndex].trnxIndexVector.size() == 1 \
+					and resourceTable[RTIndex].trnxIndexVector.front() == tempInstr.trnxIndex)
 				{
-					// Check whether the instruction is of same transaction
-					if (resourceTable[RTIndex].trnxIndexVector.front() == transNum)
-					{
-						resourceTable[RTIndex].op = W;
+					resourceTable[RTIndex].op = W;
 
-						// Push instr in schedule
-						_schedule tempSRow;
-						tempSRow.trnxIndex = transNum;
-						tempSRow.var = tempInstr->var;
-						tempSRow.op = tempInstr->op;
+					// Push instr in schedule
+					InsertInSchedule(tempInstr);
 
-						schedule.push_back(tempSRow);
-					}
-					// Checks Wait-die condition
-					// Checks whether the new instr is old
-					else if (transNum < resourceTable[RTIndex].trnxIndexVector.front())
-						return WAIT;
-					else
-						return DIE;
+					return SUCCESS;
 				}
 				else
-					// Give priority to readers
-					return DIE;
+					return ABORT;
 			}
 		}
 		else	// If op is W
 		{
 			// If selected instr has op W and is of
 			// same transaction
-			if (resourceTable[RTIndex].trnxIndexVector.front() == transNum)
+			if (tempInstr.op == W and resourceTable[RTIndex].trnxIndexVector.front() == tempInstr.trnxIndex)
 			{
-				resourceTable[RTIndex].op = W;
-
 				// Push instr in schedule
-				_schedule tempSRow;
-				tempSRow.trnxIndex = transNum;
-				tempSRow.var = tempInstr->var;
-				tempSRow.op = tempInstr->op;
-
-				schedule.push_back(tempSRow);
+				InsertInSchedule(tempInstr);
 
 				return SUCCESS;
 			}
-			// Check for Wait-die condition
-			// Check whether the new instr is old
-			else if (transNum < resourceTable[RTIndex].trnxIndexVector.front())
-				return WAIT;
 			else
-				return DIE;
+				return ABORT;
 		}
 	}
 
-	return DIE;
+	return ABORT;
 }
 
 int main()
@@ -198,6 +162,9 @@ int main()
 			do {ch = cin.get();} while(ch == ' ');
 			tempInstr.var = ch;
 		
+			// Added trnx index to trnx  variable
+			tempInstr.trnxIndex = transList.size() + 1;
+
 			// Pushing the new intruction
 			transaction.push_back(tempInstr);
 
@@ -224,15 +191,18 @@ int main()
 		int randTransIndex = transList.size()*rand()/RAND_MAX;
 	
 		// Send transList index to function to take the first
-		// instruction from transaction. If older trnx then,
-		// Wait occurs and continue to next instruction and
-		// if younger trnx then die occurs
-		if (system(randTransIndex) == WAIT)
-			continue;
-		else if (system(randTransIndex) == DIE)
+		// instruction from transaction. If error occurs
+		// sleep for some time and then retry. If problem still
+		// persists then abort.
+		if (system(randTransIndex) == ABORT)
 		{
-			cout << "Abort\n";
-			transList.erase(transList.begin()+randTransIndex);
+			debug(2);
+			sleep(10);
+			if (system(randTransIndex) == ABORT)
+			{
+				cout << "Abort\n";
+				transList.erase(transList.begin()+randTransIndex);
+			}
 		}
 		else
 		{
@@ -240,8 +210,18 @@ int main()
 			if (transList[randTransIndex].size() > 1)
 				transList[randTransIndex].erase(transList[randTransIndex].begin());
 			else
+			{
 				transList.erase(transList.begin()+randTransIndex);
+				for (int i = 0; i < resourceTable.size(); ++i)
+				{
+					// Check if it is a write operation and the
+					// trnx number is same then delete
+					if (resourceTable[i].op == 'W' and resourceTable[i].trnxIndexVector.front() == randTransIndex)
+						resourceTable.erase(resourceTable.begin()+i);
+				}
+			}
 		}
+		continue;
 	}
 
 	// Print schedule if completed
@@ -249,6 +229,16 @@ int main()
 	{
 		cout << i->trnxIndex << " " << i->var << " " << i->op << '\n';
 	}
-	
+
+	// Print resource table if completed
+	for (vector<_resourceTable>::iterator i = resourceTable.begin(); i != resourceTable.end(); ++i)
+	{
+		for (vector<int>::iterator j = i->trnxIndexVector.begin(); j != i->trnxIndexVector.end(); ++j)
+		{
+			cout << *j << " ";
+		}
+		cout << i->var << " " << i->op << '\n';
+	}
+
 	return 0;
 }
