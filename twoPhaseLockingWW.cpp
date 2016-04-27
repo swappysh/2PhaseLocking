@@ -18,8 +18,10 @@
 #define	W	1
 #define	R	0
 
-// Definition for wait-die deadlock revention protocol
+// Definition for wait-wound deadlock revention protocol
 #define	SUCCESS	0
+#define WOUND  1
+#define WAIT  2
 #define	ABORT	-1
 
 // Function to debug
@@ -203,6 +205,12 @@ int main()
 				cout << "Abort\n";
 				transList.erase(transList.begin()+randTransIndex);
 			}
+		}
+		else if (system(randTransIndex) == WOUND){
+
+		}
+		else if (system(randTransIndex) == WAIT){
+			/* do nothing just wait to completion of other one*/
 		}
 		else
 		{
