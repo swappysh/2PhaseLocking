@@ -4,7 +4,8 @@
 * @Last Modified by:   swapsharma
 * @Last Modified time: 2016-04-17 23:18:59
 * @Aim: To design and implement Two phase locking algo
-* @Bugs:
+* @Bugs: Fix Todo's
+*	    
 */
 
 #include <iostream>
@@ -119,8 +120,13 @@ bool system(int transNum)
 
 					return SUCCESS;
 				}
-				else
-					return ABORT;
+				else{
+					if(ti > tj){                                             // Todo
+						return wait;
+					}
+					else
+						return wound;
+				}
 			}
 		}
 		else	// If op is W
@@ -134,8 +140,12 @@ bool system(int transNum)
 
 				return SUCCESS;
 			}
-			else
-				return ABORT;
+			else{
+				if(ti > tj)                                                  // Todo
+					return wait;
+				else
+					return wound;
+			}
 		}
 	}
 
@@ -207,10 +217,17 @@ int main()
 			}
 		}
 		else if (system(randTransIndex) == WOUND){
-
+			debug(2);
+			sleep(10);
+			if (system(randTransIndex) == ABORT)
+			{
+				cout << "Abort\n";
+				// transList.erase(transList.begin()+randTransIndex);
+			}
 		}
 		else if (system(randTransIndex) == WAIT){
 			/* do nothing just wait to completion of other one*/
+			continue;
 		}
 		else
 		{
